@@ -1,3 +1,4 @@
+#' @import utils
 utils::globalVariables(c("V2", "V4", "Nsamples"))
 get_n_samples_per_transcript_from_tracking <- function(tracking,cols=c(5:ncol(tracking))){
   apply(tracking[,cols],1,
