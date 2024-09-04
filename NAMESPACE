@@ -3,6 +3,7 @@
 export("%>%")
 export(get_n_exons_per_transcript)
 export(get_n_samples_per_transcript_from_tracking)
+export(get_sample_occurrance_per_gene_from_tracking)
 export(split_samples_info)
 import(utils)
 importFrom(magrittr,"%>%")
