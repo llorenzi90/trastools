@@ -1,3 +1,4 @@
+utils::globalVariables(c("V2", "V4", "Nsamples"))
 get_n_samples_per_transcript_from_tracking <- function(tracking,cols=c(5:ncol(tracking))){
   apply(tracking[,cols],1,
         function(x)sum(x!="-"))
@@ -52,7 +53,7 @@ get_n_samples_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(tracking
 
 get_Max_n_samples_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(tracking))){
   tracking$Nsamples=get_n_samples_per_transcript_from_tracking(tracking,cols)
-  Nsamps=tracking%>%group_by(V2) %>%summarise(maxNsamps=max(Nsamples))
+  Nsamps=tracking%>%dplyr::group_by(V2) %>%dplyr::summarise(maxNsamps=max(Nsamples))
   colnames(Nsamps)[1]="gene_id"
   return(Nsamps)
 }
