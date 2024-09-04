@@ -46,6 +46,45 @@ get_n_samples_per_transcript_from_tracking <- function(tracking,cols=c(5:ncol(tr
 
 }
 
+#' Get number of exons for each assembled transcript
+#'
+#' @param tracking A gffCompare tracking file-like data.frame that matches transcripts up between samples
+#' @param cols Column numbers corresponding to samples in the tracking file, defaults to 5:ncol(tracking)
+#'
+#' @return A vector with the number of exons for each transcript
+#' @export
+#'
+#' @examples
+#' tracking <- structure(list(
+#' V1 = c("TCONS_00000001", "TCONS_00000002", "TCONS_00000003",
+#' "TCONS_00000004", "TCONS_00000005", "TCONS_00000006"),
+#' V2 = c("XLOC_000001",
+#'        "XLOC_000003",
+#'        "XLOC_000004",
+#'        "XLOC_000005",
+#'        "XLOC_000009",
+#'        "XLOC_000009"
+#' ),
+#' V3 = c("XLOC_002036|TCONS_00004598", "-", "-", "XLOC_002044|TCONS_00004614",
+#'           "XLOC_000074|TCONS_00000075", "XLOC_000074|TCONS_00000080"),
+#' V4 = c("i", "u", "r", "x", "=", "="),
+#' V5 = c("q1:STRG.1|STRG.1.1|1|0.091235|0.267011|6.848781|410",
+#'        "q1:STRG.5|STRG.5.1|1|0.066681|0.195150|5.005556|360",
+#'        "q1:STRG.10|STRG.10.1|1|0.084226|0.246497|6.322581|248",
+#'        "q1:STRG.13|STRG.13.1|1|0.079929|0.233920|6.000000|251",
+#'        "q1:STRG.32|STRG.32.1|9|8.963122|26.231630|672.835327|2474",
+#'        "q1:STRG.32|STRG.32.2|8|0.459790|1.345631|34.515125|2372"
+#'        ),
+#' V6 = c("-", "-", "-", "-",
+#' "q2:STRG.11|STRG.11.1|9|8.893389|29.440718|746.519531|2430",
+#' "q2:STRG.11|STRG.11.2|8|0.305824|1.012402|25.671185|2328"
+#' ),
+#' V7 = c("-", "-", "-", "-",
+#' "q3:STRG.23|STRG.23.2|9|8.601234|23.619555|632.080566|2429",
+#' "q3:STRG.23|STRG.23.1|8|0.289132|0.793974|21.247471|2594"
+#' )),
+#' row.names = c(NA, 6L), class = "data.frame")
+#' get_n_exons_per_transcript(tracking)
 get_n_exons_per_transcript <- function(tracking,cols=c(5:ncol(tracking))){
 
   single_tr_info=apply(tracking[,cols],1,function(x)x[x!="-"][1])
@@ -54,6 +93,46 @@ get_n_exons_per_transcript <- function(tracking,cols=c(5:ncol(tracking))){
 }
 
 
+#' Split samples information columns into gene_id and transcrip_id
+#'
+#' @param tracking A gffCompare tracking file-like data.frame that matches transcripts up between samples
+#' @param cols Column numbers corresponding to samples in the tracking file, defaults to 5:ncol(tracking)
+#' @param qnames Optional character vector with sample names
+#'
+#' @return Modified tracking table with extra columns from separated gene and transcript for each sample
+#' @export
+#'
+#' @examples
+#' tracking <- structure(list(
+#' V1 = c("TCONS_00000001", "TCONS_00000002", "TCONS_00000003",
+#' "TCONS_00000004", "TCONS_00000005", "TCONS_00000006"),
+#' V2 = c("XLOC_000001",
+#'        "XLOC_000003",
+#'        "XLOC_000004",
+#'        "XLOC_000005",
+#'        "XLOC_000009",
+#'        "XLOC_000009"
+#' ),
+#' V3 = c("XLOC_002036|TCONS_00004598", "-", "-", "XLOC_002044|TCONS_00004614",
+#'           "XLOC_000074|TCONS_00000075", "XLOC_000074|TCONS_00000080"),
+#' V4 = c("i", "u", "r", "x", "=", "="),
+#' V5 = c("q1:STRG.1|STRG.1.1|1|0.091235|0.267011|6.848781|410",
+#'        "q1:STRG.5|STRG.5.1|1|0.066681|0.195150|5.005556|360",
+#'        "q1:STRG.10|STRG.10.1|1|0.084226|0.246497|6.322581|248",
+#'        "q1:STRG.13|STRG.13.1|1|0.079929|0.233920|6.000000|251",
+#'        "q1:STRG.32|STRG.32.1|9|8.963122|26.231630|672.835327|2474",
+#'        "q1:STRG.32|STRG.32.2|8|0.459790|1.345631|34.515125|2372"
+#'        ),
+#' V6 = c("-", "-", "-", "-",
+#' "q2:STRG.11|STRG.11.1|9|8.893389|29.440718|746.519531|2430",
+#' "q2:STRG.11|STRG.11.2|8|0.305824|1.012402|25.671185|2328"
+#' ),
+#' V7 = c("-", "-", "-", "-",
+#' "q3:STRG.23|STRG.23.2|9|8.601234|23.619555|632.080566|2429",
+#' "q3:STRG.23|STRG.23.1|8|0.289132|0.793974|21.247471|2594"
+#' )),
+#' row.names = c(NA, 6L), class = "data.frame")
+#' split_samples_info(tracking)
 split_samples_info <- function(tracking,cols=c(5:ncol(tracking)),qnames=NULL){
   if(is.null(qnames)){
     qnames=paste0("q",1:length(cols))
