@@ -6,7 +6,7 @@ get_n_samples_per_transcript_from_tracking <- function(tracking,cols=c(5:ncol(tr
 
 }
 
-extract_n_exons_per_transcript <- function(tracking,cols=c(5:ncol(tracking))){
+get_n_exons_per_transcript <- function(tracking,cols=c(5:ncol(tracking))){
 
   single_tr_info=apply(tracking[,cols],1,function(x)x[x!="-"][1])
   n_exons=sapply(strsplit(single_tr_info,split = "\\|"),function(x)x[3])
