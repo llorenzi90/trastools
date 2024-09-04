@@ -14,7 +14,7 @@ extract_n_exons_per_transcript <- function(tracking,cols=c(5:ncol(tracking))){
 
 
 split_samples_info <- function(tracking,cols=c(5:ncol(tracking)),qnames=NULL){
-  if(is_null(qnames)){
+  if(is.null(qnames)){
     qnames=paste0("q",1:length(cols))
   }
   names(cols)=qnames
@@ -33,7 +33,7 @@ split_samples_info <- function(tracking,cols=c(5:ncol(tracking)),qnames=NULL){
 # gene level functions ----
 get_sample_occurrance_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(tracking))){
   sample_occurrance_per_gene=lapply(cols, function(sa){
-    aggregate(tracking[,sa],by=list(gene_id=tracking$V2),function(x)any(x!="-"))
+    stats::aggregate(tracking[,sa],by=list(gene_id=tracking$V2),function(x)any(x!="-"))
   })
   gene_id=sample_occurrance_per_gene[[1]]$gene_id
 
@@ -61,9 +61,9 @@ get_Max_n_samples_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(trac
 #single_tr_info=apply(tracking_SL[,6:8],1,function(x)x[x!="-"][1])
 #n_exons=sapply(strsplit(single_tr_info,split = "\\|"),function(x)x[3])
 
-get_overlapRef_gene_level <- function(tracking){
+get_overlapRef_gene_level <- function(tracking,overlapping_class_codes = get("overlapping_class_codes")){
   oref=tracking$V4%in%overlapping_class_codes
-  orefGL=aggregate(oref,by=list(gene_id=tracking$V2),function(x)any(x))
+  orefGL=stats::aggregate(oref,by=list(gene_id=tracking$V2),function(x)any(x))
   return(orefGL)
 }
 
