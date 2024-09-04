@@ -61,9 +61,8 @@ get_Max_n_samples_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(trac
 #test1=split_samples_info(tracking = merged_refs_track[1:100,])
 #single_tr_info=apply(tracking_SL[,6:8],1,function(x)x[x!="-"][1])
 #n_exons=sapply(strsplit(single_tr_info,split = "\\|"),function(x)x[3])
-
-get_overlapRef_gene_level <- function(tracking,overlapping_class_codes = get("overlapping_class_codes")){
-  oref=tracking$V4%in%overlapping_class_codes
+get_overlapRef_gene_level <- function(tracking,overlapping_classcodes = overlapping_class_codes){
+  oref=tracking$V4%in%overlapping_classcodes
   orefGL=stats::aggregate(oref,by=list(gene_id=tracking$V2),function(x)any(x))
   return(orefGL)
 }
