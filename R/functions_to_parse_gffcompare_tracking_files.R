@@ -160,7 +160,7 @@ split_samples_info <- function(tracking,cols=c(5:ncol(tracking)),qnames=NULL){
 #' @param tracking A gffCompare tracking file-like data.frame that matches transcripts up between samples
 #' @param cols Column numbers corresponding to samples in the tracking file, defaults to 5:ncol(tracking)
 #'
-#' @return A table with gene_id and a logical column for each sample
+#' @return A table with a logical column for each sample and gene_id
 #' @export
 #'
 #' @examples
@@ -207,6 +207,47 @@ get_sample_occurrance_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(
 }
 
 
+#' Get number of samples per gene from tracking
+#'
+#' For each 'XLOC...' loci returns the number of samples in which it appears
+#'
+#' @param tracking A gffCompare tracking file-like data.frame that matches transcripts up between samples
+#' @param cols Column numbers corresponding to samples in the tracking file, defaults to 5:ncol(tracking)
+#'
+#' @return A named integer vector with the number of samples in which each gene_id appears
+#' @export
+#'
+#' @examples
+#' tracking <- structure(list(
+#' V1 = c("TCONS_00000001", "TCONS_00000002", "TCONS_00000003",
+#' "TCONS_00000004", "TCONS_00000005", "TCONS_00000006"),
+#' V2 = c("XLOC_000001",
+#'        "XLOC_000003",
+#'        "XLOC_000004",
+#'        "XLOC_000005",
+#'        "XLOC_000009",
+#'        "XLOC_000009"
+#' ),
+#' V3 = c("XLOC_002036|TCONS_00004598", "-", "-", "XLOC_002044|TCONS_00004614",
+#'           "XLOC_000074|TCONS_00000075", "XLOC_000074|TCONS_00000080"),
+#' V4 = c("i", "u", "r", "x", "=", "="),
+#' V5 = c("q1:STRG.1|STRG.1.1|1|0.091235|0.267011|6.848781|410",
+#'        "q1:STRG.5|STRG.5.1|1|0.066681|0.195150|5.005556|360",
+#'        "q1:STRG.10|STRG.10.1|1|0.084226|0.246497|6.322581|248",
+#'        "q1:STRG.13|STRG.13.1|1|0.079929|0.233920|6.000000|251",
+#'        "q1:STRG.32|STRG.32.1|9|8.963122|26.231630|672.835327|2474",
+#'        "q1:STRG.32|STRG.32.2|8|0.459790|1.345631|34.515125|2372"
+#'        ),
+#' V6 = c("-", "-", "-", "-",
+#' "q2:STRG.11|STRG.11.1|9|8.893389|29.440718|746.519531|2430",
+#' "q2:STRG.11|STRG.11.2|8|0.305824|1.012402|25.671185|2328"
+#' ),
+#' V7 = c("-", "-", "-", "-",
+#' "q3:STRG.23|STRG.23.2|9|8.601234|23.619555|632.080566|2429",
+#' "q3:STRG.23|STRG.23.1|8|0.289132|0.793974|21.247471|2594"
+#' )),
+#' row.names = c(NA, 6L), class = "data.frame")
+#' get_n_samples_per_gene_from_tracking(tracking)
 get_n_samples_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(tracking))){
   sopg=get_sample_occurrance_per_gene_from_tracking(tracking,cols)
   Nsamps=rowSums(sopg[,1:length(cols)])
@@ -214,15 +255,99 @@ get_n_samples_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(tracking
   return(Nsamps)
 }
 
+#' Get maximum number of samples in which individual transcripts from each gene are assembled
+#'
+#' Retrieves the maximum number of samples in which any transcript from each
+#' 'XLOC...' gene is assembled. This gives an idea of how reproducible each
+#' merged loci is between samples.
+#'
+#'
+#' @param tracking A gffCompare tracking file-like data.frame that matches transcripts up between samples
+#' @param cols Column numbers corresponding to samples in the tracking file, defaults to 5:ncol(tracking)
+#'
+#' @return A table with gene_id and the maximum number of samples in which individual transcripts from each gene are assembled
+#' @export
+#'
+#' @examples
+#' tracking <- structure(list(
+#' V1 = c("TCONS_00000001", "TCONS_00000002", "TCONS_00000003",
+#' "TCONS_00000004", "TCONS_00000005", "TCONS_00000006"),
+#' V2 = c("XLOC_000001",
+#'        "XLOC_000003",
+#'        "XLOC_000004",
+#'        "XLOC_000005",
+#'        "XLOC_000009",
+#'        "XLOC_000009"
+#' ),
+#' V3 = c("XLOC_002036|TCONS_00004598", "-", "-", "XLOC_002044|TCONS_00004614",
+#'           "XLOC_000074|TCONS_00000075", "XLOC_000074|TCONS_00000080"),
+#' V4 = c("i", "u", "r", "x", "=", "="),
+#' V5 = c("q1:STRG.1|STRG.1.1|1|0.091235|0.267011|6.848781|410",
+#'        "q1:STRG.5|STRG.5.1|1|0.066681|0.195150|5.005556|360",
+#'        "q1:STRG.10|STRG.10.1|1|0.084226|0.246497|6.322581|248",
+#'        "q1:STRG.13|STRG.13.1|1|0.079929|0.233920|6.000000|251",
+#'        "q1:STRG.32|STRG.32.1|9|8.963122|26.231630|672.835327|2474",
+#'        "q1:STRG.32|STRG.32.2|8|0.459790|1.345631|34.515125|2372"
+#'        ),
+#' V6 = c("-", "-", "-", "-",
+#' "q2:STRG.11|STRG.11.1|9|8.893389|29.440718|746.519531|2430",
+#' "q2:STRG.11|STRG.11.2|8|0.305824|1.012402|25.671185|2328"
+#' ),
+#' V7 = c("-", "-", "-", "-",
+#' "q3:STRG.23|STRG.23.2|9|8.601234|23.619555|632.080566|2429",
+#' "q3:STRG.23|STRG.23.1|8|0.289132|0.793974|21.247471|2594"
+#' )),
+#' row.names = c(NA, 6L), class = "data.frame")
+#' get_Max_n_samples_per_gene_from_tracking(tracking)
 get_Max_n_samples_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(tracking))){
   tracking$Nsamples=get_n_samples_per_transcript_from_tracking(tracking,cols)
   Nsamps=tracking%>%dplyr::group_by(V2) %>%dplyr::summarise(maxNsamps=max(Nsamples))
   colnames(Nsamps)[1]="gene_id"
   return(Nsamps)
 }
-#test1=split_samples_info(tracking = merged_refs_track[1:100,])
-#single_tr_info=apply(tracking_SL[,6:8],1,function(x)x[x!="-"][1])
-#n_exons=sapply(strsplit(single_tr_info,split = "\\|"),function(x)x[3])
+
+#' Check and report overlap with reference transcripts at gene level
+#'
+#' Overlap is defined first at transcript level. If the classcode is one of \code{overlapping_class_codes}
+#' If any transcript in an 'XLOC...' loci is an overlap, then the gene is an overlap.
+#'
+#'
+#' @param tracking A gffCompare tracking file-like data.frame that matches transcripts up between samples
+#' @param overlapping_classcodes Character vector, classcodes to consider as overlapping, default: "=" "c" "e" "o" "j" "k" "m" "n" "p"
+#' @return A table with gene_id and logical for overlap with reference transcripts
+#' @export
+#'
+#' @examples
+#' tracking <- structure(list(
+#' V1 = c("TCONS_00000001", "TCONS_00000002", "TCONS_00000003",
+#' "TCONS_00000004", "TCONS_00000005", "TCONS_00000006"),
+#' V2 = c("XLOC_000001",
+#'        "XLOC_000003",
+#'        "XLOC_000004",
+#'        "XLOC_000005",
+#'        "XLOC_000009",
+#'        "XLOC_000009"
+#' ),
+#' V3 = c("XLOC_002036|TCONS_00004598", "-", "-", "XLOC_002044|TCONS_00004614",
+#'           "XLOC_000074|TCONS_00000075", "XLOC_000074|TCONS_00000080"),
+#' V4 = c("i", "u", "r", "x", "=", "="),
+#' V5 = c("q1:STRG.1|STRG.1.1|1|0.091235|0.267011|6.848781|410",
+#'        "q1:STRG.5|STRG.5.1|1|0.066681|0.195150|5.005556|360",
+#'        "q1:STRG.10|STRG.10.1|1|0.084226|0.246497|6.322581|248",
+#'        "q1:STRG.13|STRG.13.1|1|0.079929|0.233920|6.000000|251",
+#'        "q1:STRG.32|STRG.32.1|9|8.963122|26.231630|672.835327|2474",
+#'        "q1:STRG.32|STRG.32.2|8|0.459790|1.345631|34.515125|2372"
+#'        ),
+#' V6 = c("-", "-", "-", "-",
+#' "q2:STRG.11|STRG.11.1|9|8.893389|29.440718|746.519531|2430",
+#' "q2:STRG.11|STRG.11.2|8|0.305824|1.012402|25.671185|2328"
+#' ),
+#' V7 = c("-", "-", "-", "-",
+#' "q3:STRG.23|STRG.23.2|9|8.601234|23.619555|632.080566|2429",
+#' "q3:STRG.23|STRG.23.1|8|0.289132|0.793974|21.247471|2594"
+#' )),
+#' row.names = c(NA, 6L), class = "data.frame")
+#' get_overlapRef_gene_level(tracking)
 get_overlapRef_gene_level <- function(tracking,overlapping_classcodes = overlapping_class_codes){
   oref=tracking$V4%in%overlapping_classcodes
   orefGL=stats::aggregate(oref,by=list(gene_id=tracking$V2),function(x)any(x))
@@ -231,6 +356,50 @@ get_overlapRef_gene_level <- function(tracking,overlapping_classcodes = overlapp
 
 # extract expression values ----
 
+#' Get expression values in TPM or FPKM from gffCompare tracking
+#'
+#' Retrieves a table with the desired expression values (TPM default, or FPKM) from each sample's information column in the provided
+#' tracking file
+#'
+#' @param tracking A gffCompare tracking file-like data.frame that matches transcripts up between samples
+#' @param measure Character: "tpm" (default) or "fpkm"
+#' @param cols Column numbers corresponding to samples in the tracking file, defaults to 5:ncol(tracking)
+#'
+#' @return Table of expression values ('NA' if transcript not present in sample)
+#' with one column per sample and one column with the mean values across samples ('NA's removed)
+#' @export
+#'
+#' @examples
+#' tracking <- structure(list(
+#' V1 = c("TCONS_00000001", "TCONS_00000002", "TCONS_00000003",
+#' "TCONS_00000004", "TCONS_00000005", "TCONS_00000006"),
+#' V2 = c("XLOC_000001",
+#'        "XLOC_000003",
+#'        "XLOC_000004",
+#'        "XLOC_000005",
+#'        "XLOC_000009",
+#'        "XLOC_000009"
+#' ),
+#' V3 = c("XLOC_002036|TCONS_00004598", "-", "-", "XLOC_002044|TCONS_00004614",
+#'           "XLOC_000074|TCONS_00000075", "XLOC_000074|TCONS_00000080"),
+#' V4 = c("i", "u", "r", "x", "=", "="),
+#' V5 = c("q1:STRG.1|STRG.1.1|1|0.091235|0.267011|6.848781|410",
+#'        "q1:STRG.5|STRG.5.1|1|0.066681|0.195150|5.005556|360",
+#'        "q1:STRG.10|STRG.10.1|1|0.084226|0.246497|6.322581|248",
+#'        "q1:STRG.13|STRG.13.1|1|0.079929|0.233920|6.000000|251",
+#'        "q1:STRG.32|STRG.32.1|9|8.963122|26.231630|672.835327|2474",
+#'        "q1:STRG.32|STRG.32.2|8|0.459790|1.345631|34.515125|2372"
+#'        ),
+#' V6 = c("-", "-", "-", "-",
+#' "q2:STRG.11|STRG.11.1|9|8.893389|29.440718|746.519531|2430",
+#' "q2:STRG.11|STRG.11.2|8|0.305824|1.012402|25.671185|2328"
+#' ),
+#' V7 = c("-", "-", "-", "-",
+#' "q3:STRG.23|STRG.23.2|9|8.601234|23.619555|632.080566|2429",
+#' "q3:STRG.23|STRG.23.1|8|0.289132|0.793974|21.247471|2594"
+#' )),
+#' row.names = c(NA, 6L), class = "data.frame")
+#' get_expression_values(tracking)
 get_expression_values <- function(tracking, measure=c("tpm","fpkm"),cols=5:ncol(tracking)){
   measure=measure[1]
   print(measure)
