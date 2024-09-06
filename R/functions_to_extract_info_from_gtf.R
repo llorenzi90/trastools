@@ -6,7 +6,8 @@
 #' from its different exons are collapsed into
 #' unique genomic regions.
 #'
-#' @param gtf_df
+#' @param gtf_df A data.frame resulting from reading a gtf file, e.g by
+#'   rtracklayer::readGFF
 #'
 #' @return A data.frame with all non-redundant exonic regions covered by each gene
 #' @export
@@ -37,8 +38,7 @@ get_per_gene_merged_exons <- function(gtf_df){
 #' sequences.
 #'
 #'
-#' @param gtf_df A data.frame resulting from reading a gtf file, e.g by
-#'   rtracklayer::readGFF
+#' @inheritParams get_per_gene_merged_exons
 #'
 #' @return A data.frame with gene_id and exonic_length columns
 #' @export
@@ -61,57 +61,75 @@ compute_gene_non_redundant_exonic_length <- function(gtf_df){
 
 
 
+#' Calculates exonic length of each transcript
+#'
+#' @inheritParams get_per_gene_merged_exons
+#'
+#' @return a data.frame with transcript_id and length columns
+#' @export
+#'
+#' @examples
+#' compute_per_transcript_exonic_length(gtf_df)
 compute_per_transcript_exonic_length <- function(gtf_df){
   gtf_df=gtf_df %>% dplyr::filter(type=="exon")
   gtf_df$lens=gtf_df$end - gtf_df$start+1
   tr_len=gtf_df%>%dplyr::group_by(transcript_id)%>%dplyr::summarise(len=sum(lens))
   return(tr_len)
 }
-get_per_gene_merged_transcripts <- function(gtf_df,gene_id_col="gene_id"){
-  require(tidyverse)
-  require(GenomicFeatures)
-  gtf_df_exons=gtf_df %>% dplyr::filter(type=="transcript")
 
-  txdb <-makeGRangesFromDataFrame(as.data.frame(gtf_df_exons),keep.extra.columns = T)
 
-  per_gene_merged_transcripts <- as.data.frame(IRanges::reduce(split(txdb,txdb$gene_id)))
-
-  return(per_gene_merged_transcripts)
-}
 # function to compute overlap with repeats including total gene fraction
 # covered by repeats:
 
-get_overlap_with_repeats_from_GTF=function(gtf){
-  require(bedtoolsr)
-  require(tidyverse)
-  pgme=get_per_gene_merged_exons(gtf)
-  pgme=pgme[,c(3:5,2,6,7)]
-  pgme=pgme[order(pgme$seqnames,pgme$start),]
-  exonic_length=pgme%>%dplyr::group_by(group_name)%>%
-    dplyr::summarise(exonic_length=sum(width))
-  ol=bt.intersect(a = pgme,b=repeats,wo = T)
-  ol=ol%>% rowwise()%>% mutate(st=max(c(V2,V8)),en=min(c(V3,V9)))
-  olsm=ol%>%dplyr::group_by(V4)%>%
-    dplyr::summarise(repeats=paste(unique(V10[order(-V13)]),
-                            collapse = ","),
-              repeats_classes=paste(unique(V11[order(-V13)]),
-                                    collapse = ","),
-              t.overlap_length=sum(IRanges::width(IRanges::reduce(IRanges(
-                start = st,end = en)))))
-  olsm=left_join(olsm,exonic_length,by=c(V4="group_name"))
-  olsm$repeat.fraction=olsm$t.overlap_length/olsm$exonic_length
-  return(olsm)
-}
+# get_overlap_with_repeats_from_GTF=function(gtf, repeats){
+#   require(bedtoolsr)
+#   require(tidyverse)
+#   pgme=get_per_gene_merged_exons(gtf)
+#   pgme=pgme[,c(3:5,2,6,7)]
+#   pgme=pgme[order(pgme$seqnames,pgme$start),]
+#   exonic_length=pgme%>%dplyr::group_by(group_name)%>%
+#     dplyr::summarise(exonic_length=sum(width))
+#   ol=bt.intersect(a = pgme,b=repeats,wo = T)
+#   ol=ol%>% rowwise()%>% mutate(st=max(c(V2,V8)),en=min(c(V3,V9)))
+#   olsm=ol%>%dplyr::group_by(V4)%>%
+#     dplyr::summarise(repeats=paste(unique(V10[order(-V13)]),
+#                             collapse = ","),
+#               repeats_classes=paste(unique(V11[order(-V13)]),
+#                                     collapse = ","),
+#               t.overlap_length=sum(IRanges::width(IRanges::reduce(IRanges(
+#                 start = st,end = en)))))
+#   olsm=left_join(olsm,exonic_length,by=c(V4="group_name"))
+#   olsm$repeat.fraction=olsm$t.overlap_length/olsm$exonic_length
+#   return(olsm)
+# }
 
 
-exons_per_transcript=function(gtf, anno_col="biotype"){
-  ept <-  gtf%>%dplyr::filter(type=="exon")%>%dplyr::group_by(transcript_id)%>%
+#' Get the number of exons per transcript or gene
+#'
+#' The functions `exons_per_transcript` and `exons_per_gene` retrieve
+#' the exon count for each transcript or gene, respectively. At gene level,
+#' the number of unique exons is retrieved, i.e. identical exons shared by different
+#' transcripts are only counted once.
+#' Additionally, an annotation column ('biotype' by default)
+#' may be retrieved for each transcript or gene if present in then input gtf
+#'
+#' @inheritParams get_per_gene_merged_exons
+#' @param anno_col An annotation column ('biotype' by default) you may want to retrieve together with the exon number
+#'
+#' @return A data.frame with transcript_id/gene_id, N_exons and 'anno_col' (if present in gtf)
+#' @export
+#'
+#' @examples
+#' exons_per_transcript(gtf_df)
+exons_per_transcript <- function(gtf_df, anno_col="biotype"){
+  ept <-  gtf_df%>%dplyr::filter(type=="exon")%>%
+    dplyr::group_by(transcript_id)%>%
     dplyr::summarise(N_exons=n())
 
-  if(anno_col%in%colnames(gtf)){
-    gtf=as.data.frame(gtf)
-    ept$biotype=gtf[,anno_col][match(ept$transcript_id,
-                                     gtf$transcript_id)]
+  if(anno_col%in%colnames(gtf_df)){
+    gtf_df=as.data.frame(gtf_df)
+    ept$biotype=gtf_df[,anno_col][match(ept$transcript_id,
+                                     gtf_df$transcript_id)]
 
     colnames(ept)[ncol(ept)]=anno_col
   }
@@ -119,18 +137,24 @@ exons_per_transcript=function(gtf, anno_col="biotype"){
 
 }
 
+#' @rdname exons_per_transcript
+#' @param gene_col Name of the column to use to summarise at gene level, default: "gene_id"
+#'
+exons_per_gene=function(gtf_df, gene_col="gene_id", anno_col="biotype"){
+  gtf_df=as.data.frame(gtf_df)
+  gtf_df$exon_id=paste0(gtf_df$seqid,":",
+                        gtf_df$start,"-",
+                        gtf_df$end,":",
+                        gtf_df$strand)
 
-exons_per_gene=function(gtf, gene_col="gene_id", anno_col="biotype"){
-  gtf$exon_id=paste0(gtf$seqid,":",gtf$start,"-",gtf$end,":",gtf$strand)
-  gtf=as.data.frame(gtf)
-  colnames(gtf)[colnames(gtf)==gene_col]="gene_id"
-  epg <-  gtf%>%dplyr::filter(type=="exon")%>%dplyr::group_by(gene_id)%>%
+  colnames(gtf_df)[colnames(gtf_df)==gene_col]="gene_id"
+  epg <-  gtf_df%>%dplyr::filter(type=="exon")%>%dplyr::group_by(gene_id)%>%
     dplyr::summarise(N_exons=length(unique(exon_id)))
 
-  if(anno_col%in%colnames(gtf)){
-    gtf=as.data.frame(gtf)
-    epg$biotype=gtf[,anno_col][match(epg$gene_id,
-                                     gtf[,gene_col])]
+  if(anno_col%in%colnames(gtf_df)){
+    gtf_df=as.data.frame(gtf_df)
+    epg$biotype=gtf_df[,anno_col][match(epg$gene_id,
+                                     gtf_df[,gene_col])]
 
     colnames(epg)[ncol(epg)]=anno_col
   }
@@ -141,16 +165,16 @@ exons_per_gene=function(gtf, gene_col="gene_id", anno_col="biotype"){
 }
 
 
-transcripts_per_gene=function(gtf, gene_col="gene_id", anno_col="biotype"){
-  gtf=as.data.frame(gtf)
-  colnames(gtf)[colnames(gtf)==gene_col]="gene_id"
-  tpg <-  gtf%>%dplyr::group_by(gene_id)%>%
+transcripts_per_gene=function(gtf_df, gene_col="gene_id", anno_col="biotype"){
+  gtf_df=as.data.frame(gtf_df)
+  colnames(gtf_df)[colnames(gtf_df)==gene_col]="gene_id"
+  tpg <-  gtf_df%>%dplyr::group_by(gene_id)%>%
     dplyr::summarise(N_transcripts=length(unique(transcript_id)))
 
-  if(anno_col%in%colnames(gtf)){
-    gtf=as.data.frame(gtf)
-    tpg$biotype=gtf[,anno_col][match(tpg$gene_id,
-                                     gtf[,gene_col])]
+  if(anno_col%in%colnames(gtf_df)){
+    gtf_df=as.data.frame(gtf_df)
+    tpg$biotype=gtf_df[,anno_col][match(tpg$gene_id,
+                                     gtf_df[,gene_col])]
 
     colnames(tpg)[ncol(tpg)]=anno_col
   }
@@ -320,3 +344,8 @@ get_GTF_info <- function(GTF, retrieve_exons=T,retrieve_introns=T){
 
 #tlist=get_GTF_info(gtf)
 
+# function idea ----
+### annotate GTF ----
+# the idea is to use the tracking file and the GTF and retrieve
+# an annotated GTF data frame with all the analyses I want to include
+# starting by

@@ -2,6 +2,8 @@
 
 export("%>%")
 export(compute_gene_non_redundant_exonic_length)
+export(compute_per_transcript_exonic_length)
+export(exons_per_transcript)
 export(get_Max_n_samples_per_gene_from_tracking)
 export(get_expression_values)
 export(get_n_exons_per_transcript)
