@@ -7,7 +7,8 @@
 get_per_gene_merged_exons(gtf_df)
 }
 \arguments{
-\item{gtf_df}{}
+\item{gtf_df}{A data.frame resulting from reading a gtf file, e.g by
+rtracklayer::readGFF}
 }
 \value{
 A data.frame with all non-redundant exonic regions covered by each gene
