@@ -1,5 +1,31 @@
 # Compute non-redundant exonic length of genes
 
+#' Get per gene merged exons
+#'
+#' For each gene, overlapping regions
+#' from its different exons are collapsed into
+#' unique genomic regions.
+#'
+#' @param gtf_df
+#'
+#' @return A data.frame with all non-redundant exonic regions covered by each gene
+#' @export
+#'
+#' @examples
+#' head(gtf_df)
+#' get_per_gene_merged_exons(gtf_df)
+get_per_gene_merged_exons <- function(gtf_df){
+
+  gtf_df=gtf_df %>% dplyr::filter(type=="exon")
+
+  txdb <-GenomicRanges::makeGRangesFromDataFrame(as.data.frame(gtf_df),
+                                                 keep.extra.columns = T)
+
+  per_gene_merged_exons <-
+    as.data.frame(GenomicRanges::reduce(GenomicRanges::split(txdb,txdb$gene_id)))
+
+  return(per_gene_merged_exons)
+}
 
 #' Compute non-redundant exonic length of genes
 #'
@@ -22,13 +48,8 @@
 #'  compute_gene_non_redundant_exonic_length(gtf_df)
 #'
 compute_gene_non_redundant_exonic_length <- function(gtf_df){
-  gtf_df=gtf_df %>% dplyr::filter(type=="exon")
 
-  txdb <-GenomicRanges::makeGRangesFromDataFrame(as.data.frame(gtf_df),
-                                                   keep.extra.columns = T)
-
-  per_gene_merged_exons <-
-    as.data.frame(GenomicRanges::reduce(GenomicRanges::split(txdb,txdb$gene_id)))
+  per_gene_merged_exons <- get_per_gene_merged_exons(gtf_df)
 
   gene_exonic_length <- stats::aggregate(per_gene_merged_exons$width,
                                   by=list(gene_id=per_gene_merged_exons$group_name),
@@ -38,26 +59,14 @@ compute_gene_non_redundant_exonic_length <- function(gtf_df){
   return(gene_exonic_length)
 }
 
+
+
 compute_per_transcript_exonic_length <- function(gtf_df){
   gtf_df=gtf_df %>% dplyr::filter(type=="exon")
   gtf_df$lens=gtf_df$end - gtf_df$start+1
   tr_len=gtf_df%>%dplyr::group_by(transcript_id)%>%dplyr::summarise(len=sum(lens))
   return(tr_len)
 }
-
-get_per_gene_merged_exons <- function(gtf_df){
-  require(tidyverse)
-  require(GenomicFeatures)
-  gtf_df_exons=gtf_df %>% dplyr::filter(type=="exon")
-
-  txdb <-makeGRangesFromDataFrame(as.data.frame(gtf_df_exons),keep.extra.columns = T)
-
-  per_gene_merged_exons <- as.data.frame(IRanges::reduce(split(txdb,txdb$gene_id)))
-
-  return(per_gene_merged_exons)
-}
-
-
 get_per_gene_merged_transcripts <- function(gtf_df,gene_id_col="gene_id"){
   require(tidyverse)
   require(GenomicFeatures)
