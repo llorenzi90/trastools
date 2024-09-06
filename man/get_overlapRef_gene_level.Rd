@@ -12,13 +12,14 @@ get_overlapRef_gene_level(
 \arguments{
 \item{tracking}{A gffCompare tracking file-like data.frame that matches transcripts up between samples}
 
-\item{overlapping_classcodes}{Character vector, classcodes to consider as overlapping, default: "=" "c" "e" "o" "j" "k" "m" "n" "p"}
+\item{overlapping_classcodes}{Character vector, classcodes to consider as overlapping, defaults to: =, j, k, m, n, c, e, o \cr see: \code{\link{overlapping_class_codes}}}
 }
 \value{
 A table with gene_id and logical for overlap with reference transcripts
 }
 \description{
-Overlap is defined first at transcript level. If the classcode is one of \code{overlapping_class_codes}
+Overlap is defined first at transcript level. If the classcode is one of \code{overlapping_classcodes},
+then the assemble transcript is consider an overlap with a reference transcript.
 If any transcript in an 'XLOC...' loci is an overlap, then the gene is an overlap.
 }
 \examples{
