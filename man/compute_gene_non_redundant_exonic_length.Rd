@@ -22,7 +22,7 @@ of the genomic regions covered by a gene's exonic
 sequences.
 }
 \examples{
- gtf_df=readRDS(system.file("extdata", "gtf.rds", package = "trastools", mustWork = TRUE))
+ head(gtf_df)
  compute_gene_non_redundant_exonic_length(gtf_df)
 
 }
