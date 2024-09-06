@@ -5,7 +5,7 @@
 \alias{non_overlapping_class_codes}
 \title{Non-overlapping classcodes}
 \format{
-A character vector of length 7: "i" "s" "r" "u" "x" "y" "."
+A character vector of length 8
 }
 \usage{
 non_overlapping_class_codes

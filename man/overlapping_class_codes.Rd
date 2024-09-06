@@ -5,7 +5,7 @@
 \alias{overlapping_class_codes}
 \title{Overlapping classcodes}
 \format{
-A character vector of length 9 : "=" "c" "e" "o" "j" "k" "m" "n" "p"
+A character vector of length 8
 }
 \usage{
 overlapping_class_codes
