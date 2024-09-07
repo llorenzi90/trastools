@@ -6,8 +6,10 @@
 #' from its different exons are collapsed into
 #' unique genomic regions.
 #'
-#' @param gtf_df A data.frame resulting from reading a gtf file, e.g by
-#'   rtracklayer::readGFF
+#' @param gtf_df A data frame containing the GTF (Gene Transfer Format) data.
+#' This should include columns such as `seqid`, `start`, `end`, `strand`. \cr
+#' GTF files can be loaded
+#' with function `rtracklayer::readGFF`
 #'
 #' @return A data.frame with all non-redundant exonic regions covered by each gene
 #' @export
@@ -98,7 +100,7 @@ compute_per_transcript_exonic_length <- function(gtf_df){
 #                                     collapse = ","),
 #               t.overlap_length=sum(IRanges::width(IRanges::reduce(IRanges(
 #                 start = st,end = en)))))
-#   olsm=left_join(olsm,exonic_length,by=c(V4="group_name"))
+#   olsm=dplyr::left_join(olsm,exonic_length,by=c(V4="group_name"))
 #   olsm$repeat.fraction=olsm$t.overlap_length/olsm$exonic_length
 #   return(olsm)
 # }
@@ -124,7 +126,7 @@ compute_per_transcript_exonic_length <- function(gtf_df){
 exons_per_transcript <- function(gtf_df, anno_col="biotype"){
   ept <-  gtf_df%>%dplyr::filter(type=="exon")%>%
     dplyr::group_by(transcript_id)%>%
-    dplyr::summarise(N_exons=n())
+    dplyr::summarise(N_exons = dplyr::n())
 
   if(anno_col%in%colnames(gtf_df)){
     gtf_df=as.data.frame(gtf_df)
@@ -198,16 +200,40 @@ transcripts_per_gene=function(gtf_df, gene_col="gene_id", anno_col="biotype"){
 }
 
 
-require(data.table)
-require(GenomicRanges)
-get_genomic_regions=function(gffdf,by="gene_id"){
-  df=as.data.frame(gffdf)
+#' Get genomic range by gene
+#'
+#' Retrieves the genomic coordinates that each gene
+#' spans from the start of the first (most 5') exon to the end of the last
+#' (most 3') exon. The function returns a data frame in BED format with
+#' the genomic ranges for each gene.
+#'
+#' @inheritParams get_per_gene_merged_exons
+#' @param by A character string specifying the column name to group by.
+#' Default is `"gene_id"`. This column should contain the gene identifiers.
+#'
+#' @return A data frame with the genomic ranges of each gene in BED format,
+#'  containing columns: `seqid`, `start`, `end`, `gene_id`, `strand`, `width`.
+#' @importFrom dplyr group_by mutate
+#' @importFrom GenomicRanges makeGRangesFromDataFrame
+#' @export
+#'
+#' @examples
+#' # Example GTF data frame
+#' # Get genomic range by gene
+#' result <- get_genomic_range_by_gene(gtf_df)
+#' print(result)
+get_genomic_range_by_gene <- function(gtf_df,by="gene_id"){
+  df=as.data.frame(gtf_df)
   df$gene_id=df[,by]
   df=df[!is.na(df$gene_id),]
-  df=as.data.table(df)
-  df[,':='(start=min(start),end=max(end)),by=gene_id]
+  df <- df %>% dplyr::group_by(gene_id) %>%
+    dplyr::mutate(start=min(start),
+                  end=max(end))
   df=df[!duplicated(df$gene_id),]
-  genecoords=makeGRangesFromDataFrame(df[,c("seqid" , "start","end","strand","gene_id")],keep.extra.columns = T)
+
+  genecoords=GenomicRanges::makeGRangesFromDataFrame(df[,c("seqid" , "start","end","strand","gene_id")],
+                                                     keep.extra.columns = T)
+
   genecoords=as.data.frame(genecoords)
   colnames(genecoords)[6]=by
   #change format to bed file
@@ -215,80 +241,112 @@ get_genomic_regions=function(gffdf,by="gene_id"){
   return(genecoords)
 }
 
-get_GTF_info <- function(GTF, retrieve_exons=T,retrieve_introns=T){
-  require(tidyverse)
-  GTF_exons=GTF%>%dplyr::filter(type=="exon")
-  N_tr=length(unique(GTF$transcript_id))
-  N_genes=length(unique(GTF$gene_id))
+#' Summarize GTF Information
+#'
+#' Summarizes information from a GTF (Gene Transfer Format) data frame,
+#' including statistics about transcripts, genes, exons, and introns.
+#' It calculates various metrics such as the number of transcripts and genes,
+#' exon and intron lengths, and the ratio of exons to introns.
+#' The function can also provide detailed information about exons and introns if requested.
+#'
+#' @param gtf_df A data frame containing GTF data. It should include columns such as `type`, `seqid`, `start`, `end`, `strand`, `transcript_id`, and `gene_id`.
+#' @param retrieve_exons A logical value indicating whether to include detailed exon information in the output. Default is `TRUE`.
+#' @param retrieve_introns A logical value indicating whether to include detailed intron information in the output. Default is `TRUE`.
+#'
+#' @return A list containing:
+#' \item{summary}{A named vector with summary statistics including
+#' number of transcripts, genes, exons, and introns,
+#' as well as average and median exon and intron lengths, and other metrics.}
+#' \item{EPT}{A data frame with the number of exons per transcript.}
+#' \item{EPG}{A data frame with information on genes, including the maximum number of exons per gene and the type of gene (monoexonic or multiexonic).}
+#' \item{exons_info}{A data frame with detailed information about exons (if `retrieve_exons` is `TRUE`).}
+#' \item{introns_info}{A data frame with detailed information about introns (if `retrieve_introns` is `TRUE`).}
+#'
+#' @importFrom dplyr filter group_by arrange reframe left_join
+#' @importFrom stats median
+#' @export
+#'
+#' @examples
+#' # Summarize GTF information
+#' result <- summarize_GTF_info(gtf_df)
+#' print(result$summary)
+#' print(result$EPT)
+#' print(result$EPG)
+#' print(result$exons_info)
+#' print(result$introns_info)
+summarize_GTF_info <- function(gtf_df, retrieve_exons=T,retrieve_introns=T){
+  gtf_df_exons=gtf_df%>%dplyr::filter(type=="exon")
+  N_tr=length(unique(gtf_df$transcript_id))
+  N_genes=length(unique(gtf_df$gene_id))
   mean_tr_per_gene=N_tr/N_genes
-  GTF_exons$exon_id=paste0(GTF_exons$seqid,":",
-                           GTF_exons$start,"-",
-                           GTF_exons$end,":",
-                           GTF_exons$strand)
-  N_exons=length(unique(GTF_exons$exon_id))
+  gtf_df_exons$exon_id=paste0(gtf_df_exons$seqid,":",
+                           gtf_df_exons$start,"-",
+                           gtf_df_exons$end,":",
+                           gtf_df_exons$strand)
+  N_exons=length(unique(gtf_df_exons$exon_id))
 
   # add exon number
-  GTF_exonNum_plus=GTF_exons%>%dplyr::filter(strand=="+")%>%dplyr::group_by(transcript_id) %>%
-    reframe(exon_id,exon_number=1:n())
-  GTF_exonNum_minus=GTF_exons%>%dplyr::filter(strand=="-")%>%dplyr::group_by(transcript_id) %>%
-    reframe(exon_id,exon_number=n():1)
-  GTF_exonNum=rbind(GTF_exonNum_minus,GTF_exonNum_plus)
-  GTF_exons$exon_number=GTF_exonNum$exon_number[match(GTF_exons$exon_id,
-                                                      GTF_exonNum$exon_id)]
+  gtf_df_exonNum_plus=gtf_df_exons%>%dplyr::filter(strand=="+")%>%dplyr::group_by(transcript_id) %>%
+    dplyr::reframe(exon_id,exon_number=1:dplyr::n())
+  gtf_df_exonNum_minus=gtf_df_exons%>%dplyr::filter(strand=="-")%>%dplyr::group_by(transcript_id) %>%
+    dplyr::reframe(exon_id,exon_number=dplyr::n():1)
+  gtf_df_exonNum=rbind(gtf_df_exonNum_minus,gtf_df_exonNum_plus)
+  gtf_df_exons$exon_number=gtf_df_exonNum$exon_number[match(gtf_df_exons$exon_id,
+                                                      gtf_df_exonNum$exon_id)]
 
   # extract introns
-  ttstart=GTF%>%dplyr::filter(type=="exon") %>% dplyr::group_by(transcript_id)%>%
-    arrange(start)%>%
-    reframe(start=end[-length(end)] + 1)
-  ttend=GTF%>%dplyr::filter(type=="exon") %>% dplyr::group_by(transcript_id)%>%
-    arrange(start)%>%
-    reframe(end=start[-1] - 1)
+  ttstart=gtf_df%>%dplyr::filter(type=="exon") %>% dplyr::group_by(transcript_id)%>%
+    dplyr::arrange(start)%>%
+    dplyr::reframe(start=end[-length(end)] + 1)
+  ttend=gtf_df%>%dplyr::filter(type=="exon") %>% dplyr::group_by(transcript_id)%>%
+    dplyr::arrange(start)%>%
+    dplyr::reframe(end=start[-1] - 1)
 
   introns=ttstart
   introns$end=ttend$end
 
-  intron_info=GTF_exons%>%dplyr::select(seqid,
+  intron_info=gtf_df_exons%>%dplyr::select(seqid,
                                         strand,
                                         transcript_id)
   intron_info=intron_info%>%dplyr::filter(!duplicated(intron_info))
-  GTF_introns=left_join(introns,intron_info)
-  GTF_introns$intron_id=paste0(GTF_introns$seqid,":",GTF_introns$start,"-",
-                               GTF_introns$end,":",GTF_introns$strand)
-  GTF_intronNum_plus=GTF_introns%>%dplyr::filter(strand=="+")%>%dplyr::group_by(transcript_id) %>%
-    reframe(intron_id,intron_number=1:n())
-  GTF_intronNum_minus=GTF_introns%>%dplyr::filter(strand=="-")%>%dplyr::group_by(transcript_id) %>%
-    reframe(intron_id,intron_number=n():1)
-  GTF_intronNum=rbind(GTF_intronNum_minus,GTF_intronNum_plus)
+  gtf_df_introns=dplyr::left_join(introns,intron_info)
+  gtf_df_introns$intron_id=paste0(gtf_df_introns$seqid,":",gtf_df_introns$start,"-",
+                               gtf_df_introns$end,":",gtf_df_introns$strand)
+  gtf_df_intronNum_plus=gtf_df_introns%>%dplyr::filter(strand=="+")%>%dplyr::group_by(transcript_id) %>%
+    dplyr::reframe(intron_id,intron_number=1:dplyr::n())
+  gtf_df_intronNum_minus=gtf_df_introns%>%dplyr::filter(strand=="-")%>%dplyr::group_by(transcript_id) %>%
+    dplyr::reframe(intron_id,intron_number=dplyr::n():1)
+  gtf_df_intronNum=rbind(gtf_df_intronNum_minus,gtf_df_intronNum_plus)
 
-  GTF_introns=left_join(GTF_introns,GTF_intronNum)
+  gtf_df_introns=dplyr::left_join(gtf_df_introns,gtf_df_intronNum)
 
-  N_introns=length(unique(GTF_introns$intron_id))
+  N_introns=length(unique(gtf_df_introns$intron_id))
 
   exon_intron_Ratio=N_exons/N_introns
 
   # exon and intron length
-  GTF_exons$length=GTF_exons$end -GTF_exons$start +1
-  summary(GTF_exons$length[!duplicated(GTF_exons$exon_id)])
-  median_exon_length=median(GTF_exons$length[!duplicated(GTF_exons$exon_id)])
-  mean_exon_length=mean(GTF_exons$length[!duplicated(GTF_exons$exon_id)])
-  GTF_introns$length=GTF_introns$end -GTF_introns$start +1
-  summary(GTF_introns$length[!duplicated(GTF_introns$intron_id)])
-  median_intron_length=median(GTF_introns$length[!duplicated(GTF_introns$intron_id)])
-  mean_intron_length=mean(GTF_introns$length[!duplicated(GTF_introns$intron_id)])
+  gtf_df_exons$length=gtf_df_exons$end -gtf_df_exons$start +1
+  summary(gtf_df_exons$length[!duplicated(gtf_df_exons$exon_id)])
+  median_exon_length=stats::median(gtf_df_exons$length[!duplicated(gtf_df_exons$exon_id)])
+  mean_exon_length=mean(gtf_df_exons$length[!duplicated(gtf_df_exons$exon_id)])
+  gtf_df_introns$length=gtf_df_introns$end -gtf_df_introns$start +1
+  summary(gtf_df_introns$length[!duplicated(gtf_df_introns$intron_id)])
+  median_intron_length=stats::median(gtf_df_introns$length[!duplicated(gtf_df_introns$intron_id)])
+  mean_intron_length=mean(gtf_df_introns$length[!duplicated(gtf_df_introns$intron_id)])
 
   # number of unassigned strand
-  no_strand=sum(GTF$strand[!duplicated(GTF$transcript_id)]=="*")
+  no_strand=sum(gtf_df$strand[!duplicated(gtf_df$transcript_id)]=="*")
 
   # mean exons per transcript
-  EPT=exons_per_transcript(gtf = GTF)
+  EPT=exons_per_transcript(gtf = gtf_df)
   mean_EPT=mean(EPT$N_exons)
 
   # fraction monoexonic transcripts
   frac_monoexonic_tr=sum(EPT$N_exons==1)/nrow(EPT)
 
   # fraction monoexonic genes
-  EPT$gene_id=GTF$gene_id[match(EPT$transcript_id,
-                                GTF$transcript_id)]
+  EPT$gene_id=gtf_df$gene_id[match(EPT$transcript_id,
+                                gtf_df$transcript_id)]
   EPG=EPT%>%dplyr::group_by(gene_id)%>%dplyr::summarise(max_exons=max(N_exons),
                                           exonic_type=ifelse(any(N_exons!=1),"multiexonic","monoexonic"),
                                           any_mono=any(N_exons==1),
@@ -296,12 +354,12 @@ get_GTF_info <- function(GTF, retrieve_exons=T,retrieve_introns=T){
 
   frac_monoexonic_gn=sum(EPG$exonic_type=="monoexonic")/nrow(EPG)
 
-  median_tr_per_gene=median(EPG$N_tr)
+  median_tr_per_gene=stats::median(EPG$N_tr)
   # fraction of genes with monoexonic transcripts
   frac_genes_with_monoexonic_isoform=sum(EPG$any_mono)/nrow(EPG)
   # histogram N_max_exons vs N_genes
-  hist(EPG$max_exons)
-  rlist=list(N_tr,N_genes,
+  #hist(EPG$max_exons)
+  rlist = list(N_tr,N_genes,
              N_exons,
              mean_exon_length,
              median_exon_length,
@@ -334,23 +392,25 @@ get_GTF_info <- function(GTF, retrieve_exons=T,retrieve_introns=T){
                  "fraction_monoexonic_transcripts",
                  "fraction_monoexonic_genes",
                  "fraction_genes_with_monoexonic_isoform")
+  rlist=list(rlist,EPT,EPG)
+  names(rlist)=c("summary","EPT","EPG")
 
-  # if(retrieve_exons&retrieve_introns){
-  #   rlist=list(rlist,EPT,EPG,GTF_exons,GTF_introns)
-  # }else{
-  #     if(retrieve_exons){
-  #       rlist=list(rlist,EPT,EPG,GTF_exons)
-  #
-  #     }else{
-  #       if(retrieve_introns){
-  #         rlist=list(rlist,EPT,EPG,GTF_introns)
-  #
-  #       }
-  #     }
-  #   }
+  if(retrieve_exons&retrieve_introns){
+    rlist=c(rlist,list(gtf_df_exons,gtf_df_introns))
+    names(rlist)=c("summary","EPT","EPG","exons_info","introns_info")
 
-  rlist=list(rlist,EPT,EPG,GTF_exons,GTF_introns)
-  names(rlist)=c("summary","EPT","EPG","exons_info","introns_info")
+  }else{
+      if(retrieve_exons){
+        rlist=c(rlist,list(gtf_df_exons))
+        names(rlist)=c("summary","EPT","EPG","exons_info")
+      }else{
+        if(retrieve_introns){
+          rlist=c(rlist,list(gtf_df_introns))
+          names(rlist)=c("summary","EPT","EPG","introns_info")
+        }
+      }
+    }
+
   return(rlist)
 
 }

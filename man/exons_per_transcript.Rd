@@ -10,8 +10,10 @@ exons_per_transcript(gtf_df, anno_col = "biotype")
 exons_per_gene(gtf_df, gene_col = "gene_id", anno_col = "biotype")
 }
 \arguments{
-\item{gtf_df}{A data.frame resulting from reading a gtf file, e.g by
-rtracklayer::readGFF}
+\item{gtf_df}{A data frame containing the GTF (Gene Transfer Format) data.
+This should include columns such as \code{seqid}, \code{start}, \code{end}, \code{strand}. \cr
+GTF files can be loaded
+with function \code{rtracklayer::readGFF}}
 
 \item{anno_col}{An annotation column ('biotype' by default) you may want to retrieve together with the exon number}
 

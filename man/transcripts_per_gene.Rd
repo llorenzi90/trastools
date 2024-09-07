@@ -7,15 +7,19 @@
 transcripts_per_gene(gtf_df, gene_col = "gene_id", anno_col = "biotype")
 }
 \arguments{
-\item{gtf_df}{A data.frame resulting from reading a gtf file, e.g by
-rtracklayer::readGFF}
+\item{gtf_df}{A data frame containing the GTF (Gene Transfer Format) data.
+This should include columns such as \code{seqid}, \code{start}, \code{end}, \code{strand}. \cr
+GTF files can be loaded
+with function \code{rtracklayer::readGFF}}
 
 \item{gene_col}{Name of the column to use to summarise at gene level, default: "gene_id"}
 
-\item{anno_col}{An annotation column ('biotype' by default) you may want to retrieve together with the exon number}
+\item{anno_col}{An annotation column ('biotype' by default)
+you may want to retrieve together with the transcript number}
 }
 \value{
-A data.frame with gene_id, N_transcripts and 'anno_col' (if present in gtf)
+A data.frame with gene_id, N_transcripts and
+'anno_col' (if present in gtf)
 }
 \description{
 Get number of transcripts per gene

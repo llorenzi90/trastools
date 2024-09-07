@@ -7,8 +7,10 @@
 compute_gene_non_redundant_exonic_length(gtf_df)
 }
 \arguments{
-\item{gtf_df}{A data.frame resulting from reading a gtf file, e.g by
-rtracklayer::readGFF}
+\item{gtf_df}{A data frame containing the GTF (Gene Transfer Format) data.
+This should include columns such as \code{seqid}, \code{start}, \code{end}, \code{strand}. \cr
+GTF files can be loaded
+with function \code{rtracklayer::readGFF}}
 }
 \value{
 A data.frame with gene_id and exonic_length columns
