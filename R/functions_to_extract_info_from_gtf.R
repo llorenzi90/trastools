@@ -165,6 +165,19 @@ exons_per_gene=function(gtf_df, gene_col="gene_id", anno_col="biotype"){
 }
 
 
+#' Get number of transcripts per gene
+#'
+#' @inheritParams exons_per_transcript
+#' @param anno_col An annotation column ('biotype' by default)
+#' you may want to retrieve together with the transcript number
+#'
+#'
+#' @return A data.frame with gene_id, N_transcripts and
+#' 'anno_col' (if present in gtf)
+#' @export
+#'
+#' @examples
+#' transcripts_per_gene(gtf_df)
 transcripts_per_gene=function(gtf_df, gene_col="gene_id", anno_col="biotype"){
   gtf_df=as.data.frame(gtf_df)
   colnames(gtf_df)[colnames(gtf_df)==gene_col]="gene_id"
