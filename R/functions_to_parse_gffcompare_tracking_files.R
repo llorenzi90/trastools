@@ -98,6 +98,7 @@ get_n_exons_per_transcript <- function(tracking,cols=c(5:ncol(tracking))){
 #' @param tracking A gffCompare tracking file-like data.frame that matches transcripts up between samples
 #' @param cols Column numbers corresponding to samples in the tracking file, defaults to 5:ncol(tracking)
 #' @param qnames Optional character vector with sample names
+#' @param remove If `TRUE` remove input column from output table
 #'
 #' @return Modified tracking table with extra columns from separated gene and transcript for each sample
 #' @export
@@ -133,10 +134,11 @@ get_n_exons_per_transcript <- function(tracking,cols=c(5:ncol(tracking))){
 #' )),
 #' row.names = c(NA, 6L), class = "data.frame")
 #' split_samples_info(tracking)
-split_samples_info <- function(tracking,cols=c(5:ncol(tracking)),qnames=NULL){
+split_samples_info <- function(tracking,cols=c(5:ncol(tracking)),qnames=NULL,remove = T){
   if(is.null(qnames)){
     qnames=paste0("q",1:length(cols))
   }
+  orig_cols=tracking[,cols]
   names(cols)=qnames
   c1=cols[1]
   cc=c1
@@ -146,6 +148,11 @@ split_samples_info <- function(tracking,cols=c(5:ncol(tracking)),qnames=NULL){
                       sep = "\\|",extra = "drop",fill = "right")
     tracking[,paste0(qn,"_gene")]=gsub("q[1-9*]:","",tracking[,paste0(qn,"_gene")])
     cc=cc+2
+  }
+
+  if(!remove){
+    tracking <- cbind(tracking, orig_cols)
+
   }
   return(tracking)
 }

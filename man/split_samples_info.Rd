@@ -4,7 +4,12 @@
 \alias{split_samples_info}
 \title{Split samples information columns into gene_id and transcrip_id}
 \usage{
-split_samples_info(tracking, cols = c(5:ncol(tracking)), qnames = NULL)
+split_samples_info(
+  tracking,
+  cols = c(5:ncol(tracking)),
+  qnames = NULL,
+  remove = F
+)
 }
 \arguments{
 \item{tracking}{A gffCompare tracking file-like data.frame that matches transcripts up between samples}
@@ -12,6 +17,8 @@ split_samples_info(tracking, cols = c(5:ncol(tracking)), qnames = NULL)
 \item{cols}{Column numbers corresponding to samples in the tracking file, defaults to 5:ncol(tracking)}
 
 \item{qnames}{Optional character vector with sample names}
+
+\item{remove}{If \code{TRUE} remove input column from output table}
 }
 \value{
 Modified tracking table with extra columns from separated gene and transcript for each sample
