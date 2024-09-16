@@ -8,7 +8,7 @@ split_samples_info(
   tracking,
   cols = c(5:ncol(tracking)),
   qnames = NULL,
-  remove = F
+  remove = T
 )
 }
 \arguments{
