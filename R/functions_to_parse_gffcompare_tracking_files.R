@@ -159,7 +159,7 @@ split_samples_info <- function(tracking,cols=c(5:ncol(tracking)),qnames=NULL,rem
 
 # gene level functions ----
 
-#' Get sample occurrance per gene
+#' Get sample occurrence per gene
 #'
 #' For each 'XLOC...' loci returns for each sample TRUE/FALSE if it is
 #' present or not in that sample
@@ -200,17 +200,17 @@ split_samples_info <- function(tracking,cols=c(5:ncol(tracking)),qnames=NULL,rem
 #' "q3:STRG.23|STRG.23.1|8|0.289132|0.793974|21.247471|2594"
 #' )),
 #' row.names = c(NA, 6L), class = "data.frame")
-#' get_sample_occurrance_per_gene_from_tracking(tracking)
-get_sample_occurrance_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(tracking))){
-  sample_occurrance_per_gene=lapply(cols, function(sa){
+#' get_sample_occurrence_per_gene_from_tracking(tracking)
+get_sample_occurrence_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(tracking))){
+  sample_occurrence_per_gene=lapply(cols, function(sa){
     stats::aggregate(tracking[,sa],by=list(gene_id=tracking$V2),function(x)any(x!="-"))
   })
-  gene_id=sample_occurrance_per_gene[[1]]$gene_id
+  gene_id=sample_occurrence_per_gene[[1]]$gene_id
 
-  sample_occurrance_per_gene <- as.data.frame(sapply(sample_occurrance_per_gene,function(x)x$x))
-  sample_occurrance_per_gene$gene_id=gene_id
+  sample_occurrence_per_gene <- as.data.frame(sapply(sample_occurrence_per_gene,function(x)x$x))
+  sample_occurrence_per_gene$gene_id=gene_id
 
-  return(sample_occurrance_per_gene)
+  return(sample_occurrence_per_gene)
 }
 
 
@@ -256,7 +256,7 @@ get_sample_occurrance_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(
 #' row.names = c(NA, 6L), class = "data.frame")
 #' get_n_samples_per_gene_from_tracking(tracking)
 get_n_samples_per_gene_from_tracking <- function(tracking,cols=c(5:ncol(tracking))){
-  sopg=get_sample_occurrance_per_gene_from_tracking(tracking,cols)
+  sopg=get_sample_occurrence_per_gene_from_tracking(tracking,cols)
   Nsamps=rowSums(sopg[,1:length(cols)])
   names(Nsamps)=sopg$gene_id
   return(Nsamps)

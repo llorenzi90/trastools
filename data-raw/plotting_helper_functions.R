@@ -1,18 +1,17 @@
-save_tiff_svg=function(plo,outdir=".",filename="plot",
+save_tiff_svg <- function(plo,outdir=".",filename="plot",
                        h=10,w=10){
-  tiff(res = 300, height = h ,width = w, units = "in",
+  grDevices::tiff(res = 300, height = h ,width = w, units = "in",
        paste0(outdir,"/",filename,".tiff"))
   print(plo)
   dev.off()
 
-  svg( height = h ,width = w,
+  grDevices::svg( height = h ,width = w,
        paste0(outdir,"/",filename,".svg"))
   print(plo)
   dev.off()
 
 }
 
-library(ggsci)
 nejm_pal=ggsci::pal_nejm()(8)
 
 # functions useful for ordering boxplots within facets
