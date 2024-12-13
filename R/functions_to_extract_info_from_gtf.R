@@ -141,7 +141,7 @@ exons_per_transcript <- function(gtf_df, anno_col="biotype"){
 
 #' @rdname exons_per_transcript
 #' @param gene_col Name of the column to use to summarise at gene level, default: "gene_id"
-#'
+#' @export
 exons_per_gene=function(gtf_df, gene_col="gene_id", anno_col="biotype"){
   gtf_df=as.data.frame(gtf_df)
   gtf_df$exon_id=paste0(gtf_df$seqid,":",
